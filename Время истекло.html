@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ТВОЁ ВРЕМЯ ВЫШЛО</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Creepster&family=Rubik+Glitch&family=Special+Elite&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Кастомная типографика и зловещие эффекты */
+    .font-horror {
+      font-family: 'Rubik Glitch', 'Creepster', cursive, sans-serif;
+    }
+    .font-creepy {
+      font-family: 'Creepster', cursive, sans-serif;
+    }
+    .font-typewriter {
+      font-family: 'Special Elite', monospace;
+    }
+
+    /* Эффект виньетки и старого экрана ЭЛТ */
+    .vignette-overlay {
+      background: radial-gradient(circle, rgba(10, 0, 0, 0.2) 30%, rgba(0, 0, 0, 0.95) 90%);
+      pointer-events: none;
+    }
+
+    .scanlines {
+      background: linear-gradient(
+        to bottom,
+        rgba(255,255,255,0),
+        rgba(255,255,255,0) 50%,
+        rgba(0, 0, 0, 0.4) 50%,
+        rgba(0, 0, 0, 0.4)
+      );
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+
+    /* Пульсация красного сияния и дрожь */
+    @keyframes blood-pulse {
+      0%, 100% {
+        text-shadow: 0 0 10px #ff0000, 0 0 25px #b30000, 0 0 50px #500000;
+        transform: scale(1);
+      }
+      50% {
+        text-shadow: 0 0 25px #ff1a1a, 0 0 60px #ff0000, 0 0 90px #8a0000, 0 0 120px #ff0000;
+        transform: scale(1.03);
+      }
+    }
+
+    .pulse-glow {
+      animation: blood-pulse 2.2s infinite ease-in-out;
+    }
+
+    /* Эффект сбоя (Glitch) для главного заголовка */
+    @keyframes jitter {
+      0% { transform: translate(0, 0); }
+      20% { transform: translate(-2px, 2px); }
+      40% { transform: translate(-1px, -2px); }
+      60% { transform: translate(3px, 1px); }
+      80% { transform: translate(1px, -1px); }
+      100% { transform: translate(0, 0); }
+    }
+    .jitter-fx {
+      animation: jitter 0.15s infinite;
+    }
+
+    /* Зловещие глаза котов */
+    @keyframes eye-glow {
+      0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 8px #ff1100); }
+      50% { opacity: 1; filter: drop-shadow(0 0 22px #ff4500) drop-shadow(0 0 40px #ff0000); }
+    }
+    .glowing-eyes {
+      animation: eye-glow 1.8s infinite ease-in-out;
+    }
+
+    /* Медленное зловещее дыхание карточек */
+    @keyframes breathe {
+      0%, 100% { transform: translateY(0); filter: brightness(0.85) contrast(1.2); }
+      50% { transform: translateY(-6px); filter: brightness(1.05) contrast(1.4); }
+    }
+    .creepy-card {
+      animation: breathe 5s infinite ease-in-out;
+    }
+    .creepy-card:nth-child(2) { animation-delay: -1.7s; }
+    .creepy-card:nth-child(3) { animation-delay: -3.4s; }
+
+    /* Появление при наведении */
+    .creepy-card:hover .hidden-lore {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body class="bg-black text-neutral-300 min-h-screen relative overflow-x-hidden selection:bg-red-950 selection:text-red-400 font-typewriter">
+
+  <!-- Накладки атмосферы: зернистость, сканлайны, виньетка -->
+  <div class="fixed inset-0 vignette-overlay z-20"></div>
+  <div class="fixed inset-0 scanlines z-20 opacity-60"></div>
+  <canvas id="noiseCanvas" class="fixed inset-0 z-10 opacity-15 pointer-events-none"></canvas>
+
+  <!-- Верхняя полоса управления атмосферой -->
+  <header class="relative z-30 border-b border-red-950/60 bg-black/80 backdrop-blur-sm px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+    <div class="flex items-center gap-2">
+      <span class="inline-block w-3 h-3 rounded-full bg-red-600 animate-ping"></span>
+      <span class="text-xs tracking-widest text-red-500 uppercase font-mono">ТВОЁ ВРЕМЯ ВЫШЛО</span>
+    </div>
+
+    <!-- Интерактивные кнопки: звук и вспышка -->
+    <div class="flex items-center gap-3">
+      <button id="soundToggleBtn" class="px-4 py-1.5 rounded text-xs tracking-wider uppercase border border-red-900 bg-red-950/40 text-red-400 hover:bg-red-900/60 hover:text-white transition flex items-center gap-2">
+        <svg id="soundIconOff" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
+        </svg>
+        <span id="soundBtnText">ТВОЁ ВРЕМЯ ВЫШЛО</span>
+      </button>
+
+      <button id="jumpscareBtn" class="px-4 py-1.5 rounded text-xs tracking-wider uppercase border border-red-600/80 bg-red-800/30 text-red-300 hover:bg-red-600 hover:text-black font-bold transition">
+        ТВОЁ ВРЕМЯ ВЫШЛО
+      </button>
+    </div>
+  </header>
+
+  <!-- Главный экран -->
+  <main class="relative z-30 container mx-auto px-4 py-8 md:py-12 flex flex-col items-center">
+    
+    <!-- Центральный слоган: ТВОЁ ВРЕМЯ ВЫШЛО -->
+    <div class="text-center my-6 md:my-10 relative">
+      <p class="text-xs md:text-sm tracking-[0.4em] uppercase text-red-700 font-mono mb-2">
+        ТВОЁ ВРЕМЯ ВЫШЛО // ТВОЁ ВРЕМЯ ВЫШЛО
+      </p>
+
+      <h1 id="mainTitle" class="font-horror text-5xl sm:text-7xl md:text-8xl lg:text-9xl text-red-600 pulse-glow tracking-wider uppercase select-none transition-all duration-75">
+        ТВОЁ ВРЕМЯ ВЫШЛО
+      </h1>
+
+      <!-- Электронные кровавые часики на 00:00:00 -->
+      <div class="inline-block mt-4 px-6 py-2 border border-red-900/80 bg-black/90 rounded-lg shadow-[0_0_20px_rgba(255,0,0,0.3)]">
+        <span id="timerDisplay" class="font-mono text-2xl sm:text-3xl text-red-500 tracking-widest font-bold">
+          00:00:00.00
+        </span>
+      </div>
+    </div>
+
+    <!-- Предостережение -->
+    <p class="max-w-xl text-center text-sm md:text-base text-red-500/80 uppercase tracking-widest mb-12 px-4 leading-relaxed font-bold">
+      ТВОЁ ВРЕМЯ ВЫШЛО. ТВОЁ ВРЕМЯ ВЫШЛО. ТВОЁ ВРЕМЯ ВЫШЛО.
+    </p>
+
+    <!-- Сетка с жуткими котами -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-6xl">
+
+      <!-- Карточка 1: Кот 1 -->
+      <article class="creepy-card relative group rounded-2xl overflow-hidden border border-red-950/70 bg-gradient-to-b from-neutral-950 via-black to-red-950/30 shadow-[0_0_30px_rgba(0,0,0,0.9)] hover:border-red-600/60 transition-all duration-500">
+        <!-- SVG Иллюстрация: Теневой демон-кот -->
+        <div class="relative w-full aspect-square bg-[#070305] flex items-center justify-center overflow-hidden">
+          <svg class="w-full h-full p-4 transform group-hover:scale-110 transition duration-700" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="catAura1" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#4a0000" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+              </radialGradient>
+              <linearGradient id="slitEye" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#ff3300"/>
+                <stop offset="100%" stop-color="#ffcc00"/>
+              </linearGradient>
+            </defs>
+
+            <!-- Тёмная аура -->
+            <circle cx="200" cy="220" r="170" fill="url(#catAura1)"/>
+
+            <!-- Силуэт головы и ушей -->
+            <path d="M120 100 L160 210 Q200 220 240 210 L280 100 L245 155 Q200 145 155 155 Z" fill="#080808" stroke="#1c0000" stroke-width="3"/>
+            <path d="M130 110 L155 190 Q200 200 245 190 L270 110 Q225 130 175 130 Z" fill="#030303"/>
+
+            <!-- Нижняя морда -->
+            <path d="M130 200 C110 270 140 330 200 330 C260 330 290 270 270 200 Z" fill="#050505"/>
+
+            <!-- Усы как колючая проволока -->
+            <path d="M110 255 L30 245 M110 270 L20 280 M110 285 L40 315" stroke="#4d0b0b" stroke-width="2" stroke-linecap="round"/>
+            <path d="M290 255 L370 245 M290 270 L380 280 M290 285 L360 315" stroke="#4d0b0b" stroke-width="2" stroke-linecap="round"/>
+
+            <!-- Пылающие жуткие глаза -->
+            <g class="glowing-eyes">
+              <!-- Левый глаз -->
+              <ellipse cx="160" cy="215" rx="22" ry="14" fill="#000" stroke="#ff0000" stroke-width="3"/>
+              <ellipse cx="160" cy="215" rx="4" ry="12" fill="url(#slitEye)"/>
+              <circle cx="160" cy="215" r="1.5" fill="#fff"/>
+
+              <!-- Правый глаз -->
+              <ellipse cx="240" cy="215" rx="22" ry="14" fill="#000" stroke="#ff0000" stroke-width="3"/>
+              <ellipse cx="240" cy="215" rx="4" ry="12" fill="url(#slitEye)"/>
+              <circle cx="240" cy="215" r="1.5" fill="#fff"/>
+            </g>
+
+            <!-- Ужасная оскаленная пасть -->
+            <path d="M170 280 Q200 310 230 280" stroke="#520505" stroke-width="4" fill="none"/>
+            <polygon points="185,283 189,295 193,283" fill="#eeeeee"/>
+            <polygon points="207,283 211,295 215,283" fill="#eeeeee"/>
+            <polygon points="197,295 201,283 205,295" fill="#eeeeee"/>
+          </svg>
+
+          <!-- Индикатор -->
+          <span class="absolute top-3 left-3 text-[10px] bg-red-950/80 text-red-400 border border-red-800/50 px-2 py-0.5 rounded font-mono">
+            ТВОЁ ВРЕМЯ ВЫШЛО
+          </span>
+        </div>
+
+        <div class="p-6 text-center">
+          <h2 class="font-horror text-2xl text-red-500 tracking-wider">ТВОЁ ВРЕМЯ ВЫШЛО</h2>
+          <p class="text-xs text-red-400/80 mt-2 font-mono uppercase tracking-widest">
+            ТВОЁ ВРЕМЯ ВЫШЛО
+          </p>
+          <div class="mt-4 pt-4 border-t border-red-950/60 flex items-center justify-center text-xs font-mono text-red-500 font-bold tracking-widest uppercase">
+            <span>ТВОЁ ВРЕМЯ ВЫШЛО</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Карточка 2: Кот 2 -->
+      <article class="creepy-card relative group rounded-2xl overflow-hidden border border-red-950/70 bg-gradient-to-b from-neutral-950 via-black to-red-950/30 shadow-[0_0_30px_rgba(0,0,0,0.9)] hover:border-red-600/60 transition-all duration-500">
+        <!-- SVG Иллюстрация: Многоглазый хищник -->
+        <div class="relative w-full aspect-square bg-[#060407] flex items-center justify-center overflow-hidden">
+          <svg class="w-full h-full p-4 transform group-hover:scale-110 transition duration-700" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="catAura2" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#3d0043" stop-opacity="0.6"/>
+                <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <circle cx="200" cy="200" r="160" fill="url(#catAura2)"/>
+
+            <!-- Вытянутый деформированный череп кота -->
+            <path d="M140 120 L160 70 L190 140 L210 140 L240 70 L260 120 Q300 220 200 320 Q100 220 140 120 Z" fill="#0a0a0c" stroke="#330011" stroke-width="3"/>
+
+            <!-- Три пары глаз -->
+            <g class="glowing-eyes">
+              <!-- Основные глаза -->
+              <circle cx="165" cy="180" r="14" fill="#ff2222" opacity="0.9"/>
+              <circle cx="165" cy="180" r="7" fill="#ffffff"/>
+              <circle cx="235" cy="180" r="14" fill="#ff2222" opacity="0.9"/>
+              <circle cx="235" cy="180" r="7" fill="#ffffff"/>
+
+              <!-- Верхняя пара маленьких глаз -->
+              <circle cx="175" cy="150" r="8" fill="#990000"/>
+              <circle cx="175" cy="150" r="3" fill="#ff9999"/>
+              <circle cx="225" cy="150" r="8" fill="#990000"/>
+              <circle cx="225" cy="150" r="3" fill="#ff9999"/>
+
+              <!-- Глаз во лбу -->
+              <circle cx="200" cy="130" r="9" fill="#ff0044"/>
+              <circle cx="200" cy="130" r="3" fill="#fff"/>
+            </g>
+
+            <!-- Игольчатая улыбка от уха до уха -->
+            <path d="M135 240 Q200 310 265 240" stroke="#ff0033" stroke-width="3" fill="#000"/>
+            <!-- Иглы-зубы -->
+            <path d="M145 245 L150 265 L155 245 L160 270 L165 248 L170 273 L175 250 L180 275 L185 250 L190 275 L195 252 L200 277 L205 252 L210 275 L215 250 L220 274 L225 249 L230 272 L235 247 L240 268 L245 245 L250 264 L255 245" stroke="#f0ece1" stroke-width="2.5" fill="none"/>
+            <path d="M145 255 L152 240 L160 254 L170 238 L180 255 L190 238 L200 256 L210 238 L220 255 L230 239 L240 255 L250 241" stroke="#dad5c8" stroke-width="2.5" fill="none"/>
+          </svg>
+
+          <span class="absolute top-3 left-3 text-[10px] bg-red-950/80 text-red-400 border border-red-800/50 px-2 py-0.5 rounded font-mono">
+            ТВОЁ ВРЕМЯ ВЫШЛО
+          </span>
+        </div>
+
+        <div class="p-6 text-center">
+          <h2 class="font-horror text-2xl text-red-500 tracking-wider">ТВОЁ ВРЕМЯ ВЫШЛО</h2>
+          <p class="text-xs text-red-400/80 mt-2 font-mono uppercase tracking-widest">
+            ТВОЁ ВРЕМЯ ВЫШЛО
+          </p>
+          <div class="mt-4 pt-4 border-t border-red-950/60 flex items-center justify-center text-xs font-mono text-red-500 font-bold tracking-widest uppercase">
+            <span>ТВОЁ ВРЕМЯ ВЫШЛО</span>
+          </div>
+        </div>
+      </article>
+
+      <!-- Карточка 3: Кот 3 -->
+      <article class="creepy-card relative group rounded-2xl overflow-hidden border border-red-950/70 bg-gradient-to-b from-neutral-950 via-black to-red-950/30 shadow-[0_0_30px_rgba(0,0,0,0.9)] hover:border-red-600/60 transition-all duration-500">
+        <!-- SVG Иллюстрация: Скелетный призрак-кот -->
+        <div class="relative w-full aspect-square bg-[#050608] flex items-center justify-center overflow-hidden">
+          <svg class="w-full h-full p-4 transform group-hover:scale-110 transition duration-700" viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+              <radialGradient id="catAura3" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#2d1100" stop-opacity="0.8"/>
+                <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <circle cx="200" cy="200" r="160" fill="url(#catAura3)"/>
+
+            <!-- Черное тело с щупальцами -->
+            <path d="M120 360 Q100 280 150 200 Q180 160 200 160 Q220 160 250 200 Q300 280 280 360" fill="#040404"/>
+            <!-- Щупальца из спины -->
+            <path d="M140 220 Q80 180 60 110" stroke="#1f0303" stroke-width="8" stroke-linecap="round"/>
+            <path d="M260 220 Q320 180 340 110" stroke="#1f0303" stroke-width="8" stroke-linecap="round"/>
+            <path d="M130 250 Q60 270 40 330" stroke="#1a0202" stroke-width="6" stroke-linecap="round"/>
+            <path d="M270 250 Q340 270 360 330" stroke="#1a0202" stroke-width="6" stroke-linecap="round"/>
+
+            <!-- Голова-маска кота -->
+            <path d="M140 90 L170 170 Q200 180 230 170 L260 90 L235 130 Q200 120 165 130 Z" fill="#151212" stroke="#4a0e0e" stroke-width="2"/>
+            <circle cx="200" cy="190" r="45" fill="#110d0d"/>
+
+            <!-- Бездонные глазницы с червями/светлячками -->
+            <ellipse cx="180" cy="180" rx="15" ry="20" fill="#000"/>
+            <ellipse cx="220" cy="180" rx="15" ry="20" fill="#000"/>
+            
+            <circle cx="180" cy="183" r="5" fill="#00ffcc" class="glowing-eyes" style="filter: drop-shadow(0 0 8px #00ffaa);"/>
+            <circle cx="220" cy="183" r="5" fill="#00ffcc" class="glowing-eyes" style="filter: drop-shadow(0 0 8px #00ffaa);"/>
+
+            <!-- Следы когтей поверх арта -->
+            <path d="M110 90 L90 140 M125 85 L105 155 M140 85 L120 165" stroke="#ff0000" stroke-width="2" opacity="0.75" stroke-linecap="round"/>
+          </svg>
+
+          <span class="absolute top-3 left-3 text-[10px] bg-red-950/80 text-red-400 border border-red-800/50 px-2 py-0.5 rounded font-mono">
+            ТВОЁ ВРЕМЯ ВЫШЛО
+          </span>
+        </div>
+
+        <div class="p-6 text-center">
+          <h2 class="font-horror text-2xl text-red-500 tracking-wider">ТВОЁ ВРЕМЯ ВЫШЛО</h2>
+          <p class="text-xs text-red-400/80 mt-2 font-mono uppercase tracking-widest">
+            ТВОЁ ВРЕМЯ ВЫШЛО
+          </p>
+          <div class="mt-4 pt-4 border-t border-red-950/60 flex items-center justify-center text-xs font-mono text-red-500 font-bold tracking-widest uppercase">
+            <span>ТВОЁ ВРЕМЯ ВЫШЛО</span>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+    <!-- Интерактивная зона манипуляции -->
+    <section class="mt-14 w-full max-w-2xl bg-neutral-950/90 border border-red-900/40 rounded-xl p-6 shadow-2xl backdrop-blur-md">
+      <h3 class="text-center font-horror text-2xl text-red-500 mb-4 tracking-wider uppercase">
+        ТВОЁ ВРЕМЯ ВЫШЛО
+      </h3>
+      <p class="text-center text-xs text-red-400/80 mb-6 font-mono uppercase tracking-widest">
+        ТВОЁ ВРЕМЯ ВЫШЛО // ТВОЁ ВРЕМЯ ВЫШЛО
+      </p>
+
+      <div class="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <button id="addTimeBtn" class="w-full sm:w-auto px-6 py-3 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-800 text-red-300 font-bold text-sm tracking-wider uppercase transition shadow-[0_0_15px_rgba(255,0,0,0.4)] active:scale-95 font-mono">
+          ТВОЁ ВРЕМЯ ВЫШЛО
+        </button>
+        <button id="resetTimeBtn" class="w-full sm:w-auto px-6 py-3 rounded-lg border border-red-900/80 hover:bg-red-950/40 text-red-400 hover:text-red-200 text-sm tracking-wider uppercase transition font-mono">
+          ТВОЁ ВРЕМЯ ВЫШЛО
+        </button>
+      </div>
+
+      <!-- Лог -->
+      <div id="eventLog" class="mt-6 font-mono text-[11px] text-red-600/80 border-t border-red-950/60 pt-3 max-h-24 overflow-y-auto space-y-1 text-center">
+        <p>ТВОЁ ВРЕМЯ ВЫШЛО</p>
+        <p>ТВОЁ ВРЕМЯ ВЫШЛО</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Полноэкранный скример -->
+  <div id="screamerOverlay" class="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center transition-opacity duration-100 opacity-0 pointer-events-none">
+    <div class="relative w-72 h-72 sm:w-96 sm:h-96">
+      <svg class="w-full h-full animate-bounce" viewBox="0 0 200 200" fill="none">
+        <circle cx="100" cy="100" r="95" fill="#300" stroke="#f00" stroke-width="4"/>
+        <polygon points="50,40 80,10 90,50" fill="#f00"/>
+        <polygon points="150,40 120,10 110,50" fill="#f00"/>
+        <circle cx="70" cy="90" r="25" fill="#000"/>
+        <circle cx="130" cy="90" r="25" fill="#000"/>
+        <circle cx="70" cy="90" r="10" fill="#f00"/>
+        <circle cx="130" cy="90" r="10" fill="#f00"/>
+        <path d="M50 140 Q100 190 150 140 Q100 160 50 140" fill="#fff"/>
+      </svg>
+    </div>
+    <h2 class="font-horror text-4xl sm:text-6xl text-red-600 tracking-widest mt-6 uppercase text-center px-4">
+      ТВОЁ ВРЕМЯ ВЫШЛО
+    </h2>
+  </div>
+
+  <!-- Футер -->
+  <footer class="relative z-30 border-t border-neutral-900 mt-16 py-6 text-center text-xs text-red-600/80 font-mono tracking-widest uppercase">
+    <p>ТВОЁ ВРЕМЯ ВЫШЛО // ТВОЁ ВРЕМЯ ВЫШЛО</p>
+  </footer>
+
+  <script>
+    // --- 1. Шум на фоне (HTML5 Canvas Noise) ---
+    const canvas = document.getElementById('noiseCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth / 2;
+      canvas.height = window.innerHeight / 2;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function renderNoise() {
+      const w = canvas.width;
+      const h = canvas.height;
+      const imgData = ctx.createImageData(w, h);
+      const buffer = new Uint32Array(imgData.data.buffer);
+      const len = buffer.length;
+
+      for (let i = 0; i < len; i++) {
+        if (Math.random() < 0.08) {
+          // Красные и белые микро-помехи
+          buffer[i] = Math.random() > 0.5 ? 0x22ff0000 : 0x15ffffff;
+        } else {
+          buffer[i] = 0x00000000;
+        }
+      }
+      ctx.putImageData(imgData, 0, 0);
+      requestAnimationFrame(renderNoise);
+    }
+    renderNoise();
+
+    // --- 2. Генератор зловещего звука (Web Audio API без внешних файлов) ---
+    let audioCtx = null;
+    let isAudioPlaying = false;
+    let droneOsc1, droneOsc2, filterNode, gainNode;
+
+    function initAudio() {
+      if (audioCtx) return;
+      const AudioContext = window.AudioContext || window.webkitAudioContext;
+      audioCtx = new AudioContext();
+
+      // Мастер громкость
+      gainNode = audioCtx.createGain();
+      gainNode.gain.setValueAtTime(0.001, audioCtx.currentTime);
+
+      // Фильтр для низкого давящего гула
+      filterNode = audioCtx.createBiquadFilter();
+      filterNode.type = 'lowpass';
+      filterNode.frequency.setValueAtTime(140, audioCtx.currentTime);
+
+      // Два расстроенных осциллятора для зловещего биения
+      droneOsc1 = audioCtx.createOscillator();
+      droneOsc1.type = 'sawtooth';
+      droneOsc1.frequency.setValueAtTime(55, audioCtx.currentTime); // нота Ля суб-бас
+
+      droneOsc2 = audioCtx.createOscillator();
+      droneOsc2.type = 'triangle';
+      droneOsc2.frequency.setValueAtTime(56.8, audioCtx.currentTime); // Диссонанс
+
+      droneOsc1.connect(filterNode);
+      droneOsc2.connect(filterNode);
+      filterNode.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      droneOsc1.start();
+      droneOsc2.start();
+    }
+
+    function toggleAudio() {
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      const btnText = document.getElementById('soundBtnText');
+      if (!isAudioPlaying) {
+        gainNode.gain.linearRampToValueAtTime(0.25, audioCtx.currentTime + 1.5);
+        isAudioPlaying = true;
+        btnText.textContent = 'ТВОЁ ВРЕМЯ ВЫШЛО';
+        addLog('ТВОЁ ВРЕМЯ ВЫШЛО');
+      } else {
+        gainNode.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+        isAudioPlaying = false;
+        btnText.textContent = 'ТВОЁ ВРЕМЯ ВЫШЛО';
+        addLog('ТВОЁ ВРЕМЯ ВЫШЛО');
+      }
+    }
+
+    // Звуковой визг при неожиданных событиях
+    function playScreech() {
+      if (!audioCtx) initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const screechOsc = audioCtx.createOscillator();
+      const screechGain = audioCtx.createGain();
+
+      screechOsc.type = 'sawtooth';
+      screechOsc.frequency.setValueAtTime(900, audioCtx.currentTime);
+      screechOsc.frequency.exponentialRampToValueAtTime(180, audioCtx.currentTime + 0.6);
+
+      screechGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+      screechGain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.6);
+
+      screechOsc.connect(screechGain);
+      screechGain.connect(audioCtx.destination);
+
+      screechOsc.start();
+      screechOsc.stop(audioCtx.currentTime + 0.65);
+    }
+
+    document.getElementById('soundToggleBtn').addEventListener('click', toggleAudio);
+
+    // --- 3. Таймер и обратный отсчёт ---
+    let remainingTimeMs = 0;
+    const timerDisplay = document.getElementById('timerDisplay');
+    const mainTitle = document.getElementById('mainTitle');
+    const eventLog = document.getElementById('eventLog');
+
+    function addLog(text) {
+      const p = document.createElement('p');
+      p.textContent = text;
+      eventLog.prepend(p);
+      if (eventLog.children.length > 20) {
+        eventLog.removeChild(eventLog.lastChild);
+      }
+    }
+
+    function updateTimer() {
+      if (remainingTimeMs <= 0) {
+        remainingTimeMs = 0;
+        timerDisplay.textContent = '00:00:00.00';
+        timerDisplay.classList.add('text-red-600', 'animate-pulse');
+        mainTitle.textContent = 'ТВОЁ ВРЕМЯ ВЫШЛО';
+        mainTitle.classList.add('pulse-glow');
+        return;
+      }
+
+      remainingTimeMs -= 37;
+      if (remainingTimeMs < 0) remainingTimeMs = 0;
+
+      const totalSec = Math.floor(remainingTimeMs / 1000);
+      const ms = Math.floor((remainingTimeMs % 1000) / 10);
+      const minutes = Math.floor(totalSec / 60);
+      const seconds = totalSec % 60;
+
+      const pad = (n) => String(n).padStart(2, '0');
+      timerDisplay.textContent = `00:${pad(minutes)}:${pad(seconds)}.${pad(ms)}`;
+      requestAnimationFrame(updateTimer);
+    }
+
+    document.getElementById('addTimeBtn').addEventListener('click', () => {
+      remainingTimeMs += 10000;
+      mainTitle.textContent = 'ТВОЁ ВРЕМЯ ВЫШЛО';
+      mainTitle.classList.remove('pulse-glow');
+      addLog('ТВОЁ ВРЕМЯ ВЫШЛО');
+      playShortChirp();
+    });
+
+    document.getElementById('resetTimeBtn').addEventListener('click', () => {
+      remainingTimeMs = 0;
+      triggerSpookEffect();
+      addLog('ТВОЁ ВРЕМЯ ВЫШЛО');
+    });
+
+    function playShortChirp() {
+      if (!audioCtx) return;
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.frequency.setValueAtTime(320, audioCtx.currentTime);
+      o.frequency.exponentialRampToValueAtTime(120, audioCtx.currentTime + 0.2);
+      g.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      g.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start();
+      o.stop(audioCtx.currentTime + 0.2);
+    }
+
+    // --- 4. Эффект внезапного испуга (Не нажимай) ---
+    const screamerOverlay = document.getElementById('screamerOverlay');
+    const jumpscareBtn = document.getElementById('jumpscareBtn');
+
+    function triggerSpookEffect() {
+      playScreech();
+      screamerOverlay.classList.remove('pointer-events-none');
+      screamerOverlay.classList.remove('opacity-0');
+      screamerOverlay.classList.add('opacity-100');
+
+      // Тряска экрана
+      document.body.classList.add('jitter-fx');
+
+      setTimeout(() => {
+        screamerOverlay.classList.add('opacity-0');
+        screamerOverlay.classList.add('pointer-events-none');
+        screamerOverlay.classList.remove('opacity-100');
+        document.body.classList.remove('jitter-fx');
+      }, 700);
+    }
+
+    jumpscareBtn.addEventListener('click', () => {
+      triggerSpookEffect();
+      addLog('ТВОЁ ВРЕМЯ ВЫШЛО');
+    });
+
+    // Периодический случайный глитч текста
+    setInterval(() => {
+      if (Math.random() < 0.3) {
+        mainTitle.classList.add('jitter-fx');
+        setTimeout(() => mainTitle.classList.remove('jitter-fx'), 220);
+      }
+    }, 3500);
+
+    // Слежение за курсором глазами (параллакс эффект для SVG глаз)
+    document.addEventListener('mousemove', (e) => {
+      const eyeElements = document.querySelectorAll('.glowing-eyes');
+      const x = (e.clientX / window.innerWidth - 0.5) * 6;
+      const y = (e.clientY / window.innerHeight - 0.5) * 6;
+      eyeElements.forEach(eye => {
+        eye.style.transform = `translate(${x}px, ${y}px)`;
+      });
+    });
+  </script>
+</body>
+</html>
