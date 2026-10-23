@@ -382,206 +382,6 @@
         }
 
         // Переключение в злой режим
-        function activateE-->
-                    <line x1="42" y1="86" x2="95" y2="110" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
-                    <line x1="158" y1="86" x2="105" y2="110" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
-                    <!-- Злой рот с клыками -->
-                    <path d="M 65,145 Q 100,120 135,145 Q 100,160 65,145 Z" fill="#450a0a" stroke="#ef4444" stroke-width="4"/>
-                    <polygon points="75,138 82,152 89,136" fill="#ffffff"/>
-                    <polygon points="125,138 118,152 111,136" fill="#ffffff"/>
-                </svg>
-            </div>
-
-            <!-- Правый злой кот -->
-            <div class="w-24 h-24 sm:w-28 sm:h-28 animate-shake" style="animation-delay: 0.2s;">
-                <svg viewBox="0 0 200 200" class="w-full h-full">
-                    <polygon points="35,95 20,25 85,60" fill="#18181b" stroke="#dc2626" stroke-width="6"/>
-                    <polygon points="165,95 180,25 115,60" fill="#18181b" stroke="#dc2626" stroke-width="6"/>
-                    <ellipse cx="100" cy="115" rx="65" ry="54" fill="#18181b" stroke="#dc2626" stroke-width="6"/>
-                    <!-- Злые глаза -->
-                    <polygon points="50,95 90,112 55,118" fill="#ef4444"/>
-                    <polygon points="150,95 110,112 145,118" fill="#ef4444"/>
-                    <!-- Брови -->
-                    <line x1="45" y1="88" x2="92" y2="108" stroke="#dc2626" stroke-width="7" stroke-linecap="round"/>
-                    <line x1="155" y1="88" x2="108" y2="108" stroke="#dc2626" stroke-width="7" stroke-linecap="round"/>
-                    <!-- Оскал -->
-                    <path d="M 70,142 Q 100,125 130,142 Z" fill="#7f1d1d" stroke="#ef4444" stroke-width="3"/>
-                    <polygon points="80,136 86,148 92,135" fill="#ffffff"/>
-                    <polygon points="120,136 114,148 108,135" fill="#ffffff"/>
-                </svg>
-            </div>
-        </div>
-
-        <!-- Главный текст ультиматума и Таймер -->
-        <h2 class="glitch-font text-2xl sm:text-4xl text-red-500 mb-3 tracking-wide uppercase">
-            ЛОBУШКА СРАБОТАЛА! 😾
-        </h2>
-        <p class="text-zinc-200 text-base sm:text-xl font-bold mb-5 leading-snug">
-            У вас осталось <span class="text-red-500 underline">10 часов</span>, чтобы посмотреть фильм с Сашей!
-        </p>
-
-        <!-- Электронное табло обратного отсчёта -->
-        <div class="bg-black border-2 border-red-600 rounded-2xl p-4 sm:p-5 mb-5 shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-            <div class="text-xs uppercase tracking-widest text-red-400 mb-1 font-bold">Осталось времени:</div>
-            <div id="countdown-display" class="mono-font text-4xl sm:text-6xl font-extrabold text-red-500 tracking-wider">
-                10:00:00
-            </div>
-        </div>
-
-        <div class="bg-red-950/60 border border-red-700/80 rounded-xl p-4 mb-6">
-            <p class="text-red-300 font-bold text-base sm:text-lg">
-                🚨 Иначе вы попадаете в <span class="text-white bg-red-600 px-2 py-0.5 rounded uppercase">ЧЕРНЫЙ СПИСОК</span> без права на амнистию! 🚨
-            </p>
-        </div>
-
-        <!-- Кнопка согласия -->
-        <button onclick="acceptUltimatum()" class="w-full py-4 px-6 bg-red-600 hover:bg-red-500 text-white font-bold text-base sm:text-lg rounded-2xl shadow-lg shadow-red-600/40 transform transition active:scale-95 cursor-pointer uppercase tracking-wider">
-            🎬 Я всё поняла, бегу смотреть фильм!
-        </button>
-
-        <!-- Модальное сообщение после согласия -->
-        <div id="accepted-message" class="hidden mt-4 p-4 bg-emerald-950/90 border border-emerald-500 rounded-xl text-emerald-300 font-bold text-sm sm:text-base animate-bounce">
-            😼 То-то же! Котики следят за тобой. Пиши Саше прямо сейчас! ❤️
-        </div>
-    </main>
-
-    <script>
-        let countdownInterval = null;
-        // 10 часов в секундах (10 * 60 * 60 = 36000)
-        let remainingSeconds = 10 * 60 * 60;
-
-        // Единый экземпляр AudioContext, чтобы браузер не отключал звук через пару секунд
-        let audioCtx = null;
-        let isMuted = false;
-        let tickToggle = false;
-
-        function getAudioContext() {
-            if (!audioCtx) {
-                const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-                audioCtx = new AudioContextClass();
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
-            return audioCtx;
-        }
-
-        function toggleMute() {
-            isMuted = !isMuted;
-            const icon = document.getElementById('mute-icon');
-            const text = document.getElementById('mute-text');
-            if (isMuted) {
-                icon.textContent = '🔇';
-                text.textContent = 'Звук ВЫКЛ';
-            } else {
-                icon.textContent = '🔊';
-                text.textContent = 'Звук ВКЛ';
-                getAudioContext();
-                playTickSound();
-            }
-        }
-
-        // Создание фоновых летающих иконок
-        function createParticles(mode) {
-            const container = document.getElementById('particles-container');
-            container.innerHTML = '';
-            const symbols = mode === 'cute' 
-                ? ['💖', '🌸', '🐾', '✨', '😻', '💕'] 
-                : ['😾', '💢', '⚡', '🔥', '🚨', '🎬'];
-
-            const count = 22;
-            for (let i = 0; i < count; i++) {
-                const span = document.createElement('span');
-                span.className = 'bg-particle';
-                span.innerText = symbols[Math.floor(Math.random() * symbols.length)];
-                span.style.left = Math.random() * 100 + 'vw';
-                span.style.fontSize = (Math.random() * 18 + 16) + 'px';
-                span.style.animationDuration = (Math.random() * 5 + 4) + 's';
-                span.style.animationDelay = (Math.random() * 5) + 's';
-                container.appendChild(span);
-            }
-        }
-
-        // Звуковой эффект тревоги через единый Web Audio API контекст
-        function playDramaticSound() {
-            if (isMuted) return;
-            try {
-                const ctx = getAudioContext();
-                const now = ctx.currentTime;
-                const freqs = [110, 146.83, 220];
-                freqs.forEach((f) => {
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.type = 'sawtooth';
-                    osc.frequency.setValueAtTime(f, now);
-                    osc.frequency.exponentialRampToValueAtTime(f * 0.7, now + 0.9);
-
-                    gain.gain.setValueAtTime(0.14, now);
-                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.95);
-
-                    osc.connect(gain);
-                    gain.connect(ctx.destination);
-                    osc.start(now);
-                    osc.stop(now + 0.95);
-                });
-            } catch (e) {}
-        }
-
-        // Постоянный чёткий звук тиканья таймера ("тик-так" + мягкий саб-пульс)
-        function playTickSound() {
-            if (isMuted) return;
-            try {
-                const ctx = getAudioContext();
-                const now = ctx.currentTime;
-                tickToggle = !tickToggle;
-
-                // Чёткий щелчок часов (чередование высоты для эффекта "тик-так")
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'triangle';
-                osc.frequency.setValueAtTime(tickToggle ? 950 : 720, now);
-                osc.frequency.exponentialRampToValueAtTime(180, now + 0.065);
-
-                gain.gain.setValueAtTime(0.18, now);
-                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.07);
-
-                osc.connect(gain);
-                gain.connect(ctx.destination);
-                osc.start(now);
-                osc.stop(now + 0.075);
-
-                // Каждые 5 секунд — дополнительный тревожный низкий импульс
-                if (remainingSeconds % 5 === 0) {
-                    const bassOsc = ctx.createOscillator();
-                    const bassGain = ctx.createGain();
-                    bassOsc.type = 'sine';
-                    bassOsc.frequency.setValueAtTime(85, now);
-                    bassOsc.frequency.exponentialRampToValueAtTime(45, now + 0.35);
-
-                    bassGain.gain.setValueAtTime(0.2, now);
-                    bassGain.gain.exponentialRampToValueAtTime(0.001, now + 0.38);
-
-                    bassOsc.connect(bassGain);
-                    bassGain.connect(ctx.destination);
-                    bassOsc.start(now);
-                    bassOsc.stop(now + 0.4);
-                }
-            } catch (e) {}
-        }
-
-        // Форматирование ЧЧ:ММ:СС
-        function formatTime(totalSec) {
-            const hrs = Math.floor(totalSec / 3600);
-            const mins = Math.floor((totalSec % 3600) / 60);
-            const secs = totalSec % 60;
-            return [
-                String(hrs).padStart(2, '0'),
-                String(mins).padStart(2, '0'),
-                String(secs).padStart(2, '0')
-            ].join(':');
-        }
-
-        // Переключение в злой режим
         function activateEvilMode() {
             const body = document.getElementById('app-body');
             const cuteScreen = document.getElementById('cute-screen');
@@ -620,10 +420,86 @@
             }
         }
 
-        // Ответ на кнопку согласия
+        // Ответ на кнопку согласия: котики становятся добрыми, но таймер идет дальше
         function acceptUltimatum() {
+            isAccepted = true;
+            const evilScreen = document.getElementById('evil-screen');
             const msg = document.getElementById('accepted-message');
+            const countdownDisplay = document.getElementById('countdown-display');
+
+            // Смягчаем злой экран на более уютно-розово-темный
+            evilScreen.classList.remove('border-red-600', 'evil-glow');
+            evilScreen.classList.add('border-pink-500', 'shadow-[0_0_30px_rgba(236,72,153,0.3)]');
+
+            // Заменяем злых котиков на милых добрых котиков прямо в HTML злого экрана
+            const catsContainer = evilScreen.querySelector('.flex.justify-center.items-center');
+            catsContainer.innerHTML = `
+                <!-- Милый левый кот -->
+                <div class="w-24 h-24 sm:w-28 sm:h-28 animate-float">
+                    <svg viewBox="0 0 200 200" class="w-full h-full">
+                        <polygon points="35,95 25,30 85,60" fill="#18181b" stroke="#f472b6" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="42,82 35,42 75,62" fill="#fbcfe8"/>
+                        <polygon points="165,95 175,30 115,60" fill="#18181b" stroke="#f472b6" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="158,82 165,42 125,62" fill="#fbcfe8"/>
+                        <ellipse cx="100" cy="115" rx="68" ry="56" fill="#18181b" stroke="#f472b6" stroke-width="5"/>
+                        <circle cx="70" cy="108" r="11" fill="#f472b6"/>
+                        <circle cx="66" cy="104" r="4" fill="#ffffff"/>
+                        <circle cx="130" cy="108" r="11" fill="#f472b6"/>
+                        <circle cx="126" cy="104" r="4" fill="#ffffff"/>
+                        <polygon points="95,120 105,120 100,126" fill="#ec4899"/>
+                        <path d="M 88,128 Q 94,136 100,126 Q 106,136 112,128" fill="none" stroke="#f472b6" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                </div>
+                <!-- Милый главный кот с сердечком -->
+                <div class="w-36 h-36 sm:w-44 sm:h-44 animate-float" style="animation-delay: 0.15s;">
+                    <svg viewBox="0 0 200 200" class="w-full h-full">
+                        <polygon points="35,95 25,30 85,60" fill="#18181b" stroke="#f472b6" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="42,82 35,42 75,62" fill="#fbcfe8"/>
+                        <polygon points="165,95 175,30 115,60" fill="#18181b" stroke="#f472b6" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="158,82 165,42 125,62" fill="#fbcfe8"/>
+                        <ellipse cx="100" cy="115" rx="68" ry="56" fill="#18181b" stroke="#f472b6" stroke-width="5"/>
+                        <circle cx="70" cy="108" r="11" fill="#f472b6"/>
+                        <circle cx="66" cy="104" r="4" fill="#ffffff"/>
+                        <circle cx="130" cy="108" r="11" fill="#f472b6"/>
+                        <circle cx="126" cy="104" r="4" fill="#ffffff"/>
+                        <polygon points="95,120 105,120 100,126" fill="#ec4899"/>
+                        <path d="M 88,128 Q 94,136 100,126 Q 106,136 112,128" fill="none" stroke="#f472b6" stroke-width="4" stroke-linecap="round"/>
+                        <path d="M100 35 C100 25 85 18 80 28 C75 38 90 48 100 55 C110 48 125 38 120 28 C115 18 100 25 100 35 Z" fill="#f43f5e"/>
+                    </svg>
+                </div>
+                <!-- Милый правый кот -->
+                <div class="w-24 h-24 sm:w-28 sm:h-28 animate-float" style="animation-delay: 0.3s;">
+                    <svg viewBox="0 0 200 200" class="w-full h-full">
+                        <polygon points="35,95 25,30 85,60" fill="#18181b" stroke="#f472b6" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="42,82 35,42 75,62" fill="#fbcfe8"/>
+                        <polygon points="165,95 175,30 115,60" fill="#18181b" stroke="#f472b6" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="158,82 165,42 125,62" fill="#fbcfe8"/>
+                        <ellipse cx="100" cy="115" rx="68" ry="56" fill="#18181b" stroke="#f472b6" stroke-width="5"/>
+                        <circle cx="70" cy="108" r="11" fill="#f472b6"/>
+                        <circle cx="66" cy="104" r="4" fill="#ffffff"/>
+                        <circle cx="130" cy="108" r="11" fill="#f472b6"/>
+                        <circle cx="126" cy="104" r="4" fill="#ffffff"/>
+                        <polygon points="95,120 105,120 100,126" fill="#ec4899"/>
+                        <path d="M 88,128 Q 94,136 100,126 Q 106,136 112,128" fill="none" stroke="#f472b6" stroke-width="4" stroke-linecap="round"/>
+                    </svg>
+                </div>
+            `;
+
+            // Возвращаем розовые частицы на фон
+            createParticles('cute');
+
+            // Меняем заголовок и стиль таймера на более дружелюбный
+            const titleEl = evilScreen.querySelector('h2');
+            titleEl.className = "glitch-font text-2xl sm:text-4xl text-pink-400 mb-3 tracking-wide uppercase";
+            titleEl.textContent = "УГРОЗА ОТМЕНЕНА! ❤️";
+
+            const countdownBox = countdownDisplay.parentElement;
+            countdownBox.className = "bg-pink-950/80 border-2 border-pink-500 rounded-2xl py-3 px-4 mb-4 shadow-[0_0_20px_rgba(236,72,153,0.3)]";
+            countdownDisplay.className = "mono-font text-3xl sm:text-5xl font-black text-pink-400 tracking-widest";
+
+            // Показываем сообщение и скрываем кнопку согласия
             msg.classList.remove('hidden');
+            event.target.style.display = 'none';
         }
 
         // Инициализация при загрузке
